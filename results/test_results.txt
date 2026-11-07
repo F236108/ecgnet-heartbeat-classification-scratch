@@ -1,0 +1,15 @@
+Test accuracy: 0.9782
+Balanced accuracy: 0.8365
+Always-N accuracy: 0.8276
+Per-class accuracy N: 0.9960
+Per-class accuracy S: 0.6637
+Per-class accuracy V: 0.9137
+Per-class accuracy F: 0.6296
+Per-class accuracy Q: 0.9795
+
+Confusion Matrix:
+18045,21,18,11,23
+181,369,4,0,2
+100,4,1323,15,6
+39,0,21,102,0
+27,1,5,0,1575

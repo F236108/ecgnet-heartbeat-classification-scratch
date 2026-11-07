@@ -1,0 +1,13 @@
+Chosen alpha: 0.5
+Best epoch: 23
+Train loss at best epoch: 0.060877
+Val loss at best epoch: 0.072164
+Train acc at best epoch: 0.9816
+Val acc at best epoch: 0.9793
+Training time (s): 43.9
+alpha_0.01_min_val_loss: 0.161820
+alpha_0.01_val_acc: 0.9579
+alpha_0.1_min_val_loss: 0.086183
+alpha_0.1_val_acc: 0.9764
+alpha_0.5_min_val_loss: 0.072164
+alpha_0.5_val_acc: 0.9793
