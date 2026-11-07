@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ECG.NET — Neural Heartbeat Classifier</title>
+  <meta name="description" content="Classifying heartbeats from ECG signals using a 32,645-parameter neural network trained from scratch in PyTorch." />
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════
+       NAVBAR — SPOTLIGHT FLOATING PILL
+  ══════════════════════════════════════════════════ -->
+  <header id="navbar">
+    <div class="nav-shell">
+      <a href="#hero" class="nav-logo">CARDIO<span>.AI</span></a>
+      <ul class="nav-links">
+        <li><a href="#detector" class="active">Detector</a></li>
+        <li><a href="#simulation">Neural Sim</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#stats">Performance</a></li>
+      </ul>
+      <button class="theme-toggle-btn" id="themeToggle" title="Toggle Light/Dark Theme">
+        <i class="fa-solid fa-sun"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════
+       HERO SECTION
+  ══════════════════════════════════════════════════ -->
+  <section class="hero-section" id="hero">
+    <div class="hero-glow-blob"></div>
+    <div class="container">
+      <div class="pill-badge">
+        <span class="dot"></span>
+        <span>Neural Tensor Classifier • MIT-BIH Arrhythmia Dataset</span>
+      </div>
+      <h1 class="hero-title">
+        Classifying Heartbeats with <br />
+        <span class="accent-text">Pure Neural Tensors</span>
+      </h1>
+      <p class="hero-sub">
+        Real-time client-side arrhythmia diagnosis using a 32,645-parameter fully connected network 
+        trained strictly from scratch in PyTorch with mini-batch SGD, momentum, and weight decay.
+      </p>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid" id="stats">
+        <div class="stat-card">
+          <div class="stat-value">97.82%</div>
+          <div class="stat-label">Overall Test Accuracy</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">83.65%</div>
+          <div class="stat-label">Balanced Accuracy</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">32,645</div>
+          <div class="stat-label">Trainable Parameters</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">0</div>
+          <div class="stat-label">Forbidden Framework Layers</div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════
+           MAIN INTERACTIVE DETECTOR WORKSPACE
+      ══════════════════════════════════════════════════ -->
+      <div class="app-workspace" id="detector">
+        <div class="workspace-header">
+          <div class="workspace-title-box">
+            <span class="live-indicator"><span class="pulse-ring"></span> Live Inference</span>
+            <span class="mono" style="font-size: 0.85rem; color: var(--fg-muted);">187-sample signal @ 125 Hz</span>
+          </div>
+
+          <div class="controls-tabs">
+            <button class="tab-btn active" id="tabPresets">
+              <i class="fa-solid fa-wave-square"></i> Test Presets
+            </button>
+            <button class="tab-btn" id="tabUpload">
+              <i class="fa-solid fa-upload"></i> Upload CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="workspace-body">
+          <!-- Left Column: ECG Waveform Canvas -->
+          <div class="ecg-monitor-panel">
+            <div class="canvas-container">
+              <canvas id="ecgCanvas"></canvas>
+            </div>
+            <div class="canvas-telemetry">
+              <span>Time domain: 0.0 ms – 1496.0 ms</span>
+              <span>Sampling rate: 125 Hz</span>
+              <span>Normalized: [0.0, 1.0]</span>
+            </div>
+
+            <!-- Presets Bar -->
+            <div class="presets-group" id="presetsGroup">
+              <span class="presets-label">Select Verified Test Beat:</span>
+              <div class="presets-chips">
+                <button class="preset-chip active" data-class="0">N: Normal</button>
+                <button class="preset-chip" data-class="1">S: Supraventricular</button>
+                <button class="preset-chip" data-class="2">V: Ventricular</button>
+                <button class="preset-chip" data-class="3">F: Fusion</button>
+                <button class="preset-chip" data-class="4">Q: Paced / Unknown</button>
+              </div>
+            </div>
+
+            <!-- CSV Upload Dropzone -->
+            <div class="dropzone" id="uploadDropzone">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <p><strong>Click to browse</strong> or drag and drop a 187-value ECG CSV file</p>
+              <span class="mono" style="font-size: 0.75rem; color: var(--fg-muted); margin-top: 0.25rem; display: block;">Supports row format: 0.977, 0.926, ..., 0.0 (optional label at col 187)</span>
+              <input type="file" id="fileInput" accept=".csv,.txt" style="display: none;" />
+            </div>
+          </div>
+
+          <!-- Right Column: Inference & Probabilities -->
+          <div class="results-panel">
+            <div class="prediction-badge-card">
+              <div class="prediction-header">
+                <span class="label">Classification Result</span>
+                <span class="confidence-rate" id="confidenceRate">99.9%</span>
+              </div>
+              <div class="predicted-class-name" id="predictedClassName">
+                <span>N:</span> Normal Beat
+              </div>
+              <div class="ground-truth-strip">
+                <span>Ground Truth: <strong id="groundTruthLabel">N (Normal)</strong></span>
+                <span class="match-tag correct" id="matchTag">Match</span>
+              </div>
+            </div>
+
+            <!-- Probabilities Bars -->
+            <div class="prob-bars-list" id="probList">
+              <!-- Rendered dynamically by app.js -->
+            </div>
+
+            <!-- Clinical Diagnostic Summary -->
+            <div class="clinical-summary-box" id="clinicalDesc">
+              <strong>Diagnostic Profile:</strong> Normal sinoatrial rhythm. Regular P-wave, narrow QRS complex, normal ST segment and T-wave.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       LIVE NEURAL NETWORK SIMULATION SECTION
+  ══════════════════════════════════════════════════ -->
+  <section class="container" id="simulation" style="padding-bottom: 2rem;">
+    <div class="section-header">
+      <div class="section-tag">Interactive Neural Simulation</div>
+      <h2 class="section-title">Actual Network Layer Topology & Neuron Activations</h2>
+      <p style="color: var(--fg-muted); max-width: 720px; margin: 0.6rem auto 0; font-size: 0.95rem;">
+        True architectural visualization of all 4 layers (187 → 128 → 64 → 5). Watch signals propagate across 32,645 synaptic weights, lighting up active neurons and demonstrating real-time ReLU sparsity.
+      </p>
+    </div>
+
+    <div class="sim-workspace">
+      <div class="sim-top-bar">
+        <div class="sim-legend">
+          <span class="legend-item"><span class="legend-dot input-dot"></span> Input (187)</span>
+          <span class="legend-item"><span class="legend-dot relu-dot"></span> Active Neurons (ReLU > 0)</span>
+          <span class="legend-item"><span class="legend-dot inactive-dot"></span> Inactive (ReLU = 0)</span>
+          <span class="legend-item"><span class="legend-dot winner-dot"></span> Output Winner</span>
+        </div>
+        <div class="sim-actions">
+          <button class="sim-btn" id="triggerPulseBtn" title="Send a fresh electrical impulse through the network">
+            <i class="fa-solid fa-bolt"></i> Trigger Impulse
+          </button>
+          <button class="sim-btn" id="toggleSynapsesBtn" title="Toggle synaptic connection density">
+            <i class="fa-solid fa-network-wired"></i> Synapses: <span id="synapseDensityLabel">Optimal</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="sim-canvas-box">
+        <canvas id="nnCanvas"></canvas>
+        <div id="simTooltip" class="sim-tooltip"></div>
+      </div>
+
+      <!-- Live Layer Sparsity & Telemetry Breakdown -->
+      <div class="sim-telemetry-grid">
+        <div class="sim-telemetry-card">
+          <span class="tel-label">Input Layer ($x$)</span>
+          <span class="tel-val" id="telInputCount">187 / 187</span>
+          <span class="tel-sub">ECG Temporal Samples</span>
+        </div>
+        <div class="sim-telemetry-card">
+          <span class="tel-label">Hidden Layer 1 ($A^{[1]}$)</span>
+          <span class="tel-val" id="telH1Active">-- / 128</span>
+          <span class="tel-sub" id="telH1Sparsity">Sparsity: --%</span>
+        </div>
+        <div class="sim-telemetry-card">
+          <span class="tel-label">Hidden Layer 2 ($A^{[2]}$)</span>
+          <span class="tel-val" id="telH2Active">-- / 64</span>
+          <span class="tel-sub" id="telH2Sparsity">Sparsity: --%</span>
+        </div>
+        <div class="sim-telemetry-card">
+          <span class="tel-label">Output Winner ($\hat{y}$)</span>
+          <span class="tel-val accent" id="telOutputClass">--</span>
+          <span class="tel-sub" id="telOutputProb">Confidence: --%</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       ARCHITECTURE SPECIFICATION SECTION
+  ══════════════════════════════════════════════════ -->
+  <section class="container" id="architecture" style="padding-bottom: 5rem;">
+    <div class="section-header">
+      <div class="section-tag">Architecture from First Principles</div>
+      <h2 class="section-title">3-Layer Fully Connected Topology</h2>
+    </div>
+
+    <div class="arch-cards-grid">
+      <div class="arch-card">
+        <span class="arch-badge">Layer 1 (Hidden)</span>
+        <h3>187 → 128 Units</h3>
+        <p>
+          Linear projection $Z^{[1]} = X W^{[1]\top} + b^{[1]}$ followed by custom element-wise 
+          $\text{ReLU}(z) = \max(0, z)$ implemented with <code>torch.clamp(z, min=0)</code>.
+        </p>
+        <div class="mono" style="font-size: 0.8rem; color: var(--accent); margin-top: 0.75rem;">
+          24,064 parameters (He Init)
+        </div>
+      </div>
+
+      <div class="arch-card">
+        <span class="arch-badge">Layer 2 (Hidden)</span>
+        <h3>128 → 64 Units</h3>
+        <p>
+          Intermediate dense representation $Z^{[2]} = A^{[1]} W^{[2]\top} + b^{[2]}$ extracting 
+          hierarchical temporal features of the cardiac cycle with custom ReLU activation.
+        </p>
+        <div class="mono" style="font-size: 0.8rem; color: var(--accent); margin-top: 0.75rem;">
+          8,256 parameters (He Init)
+        </div>
+      </div>
+
+      <div class="arch-card">
+        <span class="arch-badge">Layer 3 (Output)</span>
+        <h3>64 → 5 Logits</h3>
+        <p>
+          Unnormalized logits $Z^{[3]} = A^{[2]} W^{[3]\top} + b^{[3]}$ passed into numerically 
+          stable softmax cross-entropy via <code>torch.logsumexp</code>.
+        </p>
+        <div class="mono" style="font-size: 0.8rem; color: var(--accent); margin-top: 0.75rem;">
+          325 parameters (Total: 32,645)
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════════════════ -->
+  <footer>
+    <div class="container">
+      <p style="margin-bottom: 0.5rem;">
+        Developed for <strong>AML Assignment 3</strong> — Machine Learning Fall 2026.
+      </p>
+      <p style="color: var(--fg-muted); font-size: 0.8rem;">
+        Neural Network Built from Scratch in PyTorch • Designed with inspiration from <a href="https://www.zainabbas.me/" target="_blank">zainabbas.me</a>
+      </p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="model_data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
